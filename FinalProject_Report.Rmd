@@ -5,10 +5,119 @@ date: "Due: DATE"
 output: html_notebook
 ---
 
+# Set Up
+
+#### Clean up environment and load packages
+```{r}
+# clean up the RStudio environment 
+rm(list = ls())
+
+# load all packages here: `mosaic`, `tidyverse`, `lubridate`, and all others used
+library(mosaic)
+library(tidyverse)
+library(tidyr)
+library(dcData)
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(esquisse)
+library(leaflet)
+library(rvest)
+library(olsrr)
+```
+
+## Research Questions
+
+- Which Airports experience more airplane accidents compared to the majority and what factors are usually significantly similar     between the incidents?
+
+
+## Data Access
+```{r}
+#Data intake
+Transportation <- read.file("AviationData.csv") 
+AirPorts <- read.file("ntsb_aviation_data.csv")
+```
 
 
 
 ```{r}
-
-
+# Main Data inspection
+summary(Transportation)
+glimpse(Transportation)
+head(Transportation)
+nrow(Transportation)
 ```
+
+
+```{r}
+# Other Data inspection
+glimpse(AirPorts)
+head(AirPorts)
+nrow(AirPorts)
+names(AirPorts)
+```
+
+
+
+
+## Data Wrangling
+
+```{r}
+Transportation %>%
+  filter(Injury.Severity == "Fatal") %>%
+  head(20)
+```
+
+
+
+
+
+
+
+## Data Visualization 
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+Transportation %>%
+ filter(!(Investigation.Type %in% "")) %>%
+ filter(!(Aircraft.damage %in% 
+    "")) %>%
+ filter(!(Aircraft.Category %in% "")) %>%
+ filter(!(Amateur.Built %in% 
+    "")) %>%
+ filter(!(Engine.Type %in% "")) %>%
+ filter(!(FAR.Description %in% "")) %>%
+ 
+    filter(!(Schedule %in% "")) %>%
+ filter(!(Purpose.of.flight %in% "")) %>%
+ filter(!(Weather.Condition %in% 
+    "")) %>%
+ filter(!(Broad.phase.of.flight %in% "")) %>%
+ filter(!(Report.Status %in% 
+    "")) %>%
+ ggplot() +
+ aes(x = Engine.Type, weight = Total.Fatal.Injuries) +
+ geom_bar(fill = "#0c4c8a") +
+ theme_minimal()
+```
+
+
+
+
+
+
+### Purpose of investigating this topic
+
+
+
+
+### Problems faced during this project 
+
+
+
+
+
+
