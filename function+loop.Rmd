@@ -1,0 +1,131 @@
+---
+title: 'Final Project: Data Check'
+author: "Kushal Regmi, Zhiyuan Zhang, Sidhart Sathya"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Set Up
+
+#### Clean up environment and load packages
+```{r}
+# clean up the RStudio environment 
+rm(list = ls())
+# load all packages here: `mosaic`, `tidyverse`, `lubridate`, and all others used
+library(mosaic)
+library(tidyverse)
+library(tidyr)
+library(dcData)
+library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(esquisse)
+library(leaflet)
+library(rvest)
+library(olsrr)
+```
+
+
+
+```{r}
+#Data intake
+Transportation <- read.file("AviationData.csv") 
+AirPorts <- read.file("ntsb_aviation_data.csv")
+```
+## Data Wrangling
+
+```{r}
+Transportation %>%
+  filter(Injury.Severity == "Fatal") %>%
+  head(20)
+```
+
+
+```{r}
+  Transportation %>%
+  left_join(AirPorts, by = c("Accident.Number" = "NTSB_RPRT_NBR"))
+```
+
+
+## loop + user define function##
+```{r}
+set.seed(184)
+Latitude = Transportation$Latitude
+longitude= Transportation$Longitude
+Total.Fatal.Injuries =Transportation$Total.Fatal.Injuries
+## define the variable
+model1 <- glm(Total.Fatal.Injuries ~ Latitude+longitude)
+## define the model for forecasting the fatal injuries
+b1 <- coef(model1)[[1]]
+b2 <- coef(model1)[[2]]#Latitude
+b3 <- coef(model1)[[3]]#longitude
+## create a vector space for storing the parameter of data
+
+summary(model1)
+
+# check the parameter
+y= Total.Fatal.Injuries
+par(mfrow= c(1,2))
+hist(Latitude)
+hist(longitude)
+## check the disatribution and spread of the variable
+
+latimean <- mean(Latitude, na.rm = TRUE)
+logimean <- mean(longitude, na.rm = TRUE)
+latisd <- sd(Latitude, na.rm = TRUE)
+logisd <- sd(longitude, na.rm = TRUE)
+## calculate the parameter for looping
+
+library(data.table)
+n = 1000
+itera = 1000
+## runtime
+store1 <-rep(0,itera)
+store2 <-rep(0,itera)
+strore_y <-rep(0,itera)
+## store the data for bi (empty space)
+x<- mean(Total.Fatal.Injuries)
+
+
+for (i in 1:itera){
+  error = rnorm(n, mean = 1, sd = 1) 
+  xlatitude = rnorm(n, mean = latimean, sd = latisd)
+  xlogitude = rnorm(n, mean =logimean, sd = logisd)
+  
+  Y_i = b1 + b2*xlatitude+b3*xlogitude+error
+  
+  fun_i <-glm(Y_i~xlatitude+xlogitude)
+  
+  store1[i] <- coef(fun_i)[[2]]
+  store2[i] <-coef(fun_i)[[3]]
+  strore_y[i] <-Y_i[i]
+  
+  data_i = data.table(Y = Y_i)
+
+}
+## run  the model with loop
+
+
+sd1 <-sd(strore_y)
+mean1 <- mean(strore_y)
+## get the parameter
+plot(density(strore_y), main = "Density plot of Fatal injuries predicted", ylim = c(0,0.4), xlim = c(0,8))
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+hist( strore_y, prob=TRUE, main = "histogram of Fatal injuries predicted", ylim = c(0,0.4), xlim = c(0,8))
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+## check the predicted is valid enough
+
+alpha<-0.05
+quantile(strore_y,probs=c(alpha/2,1-alpha/2))
+## predict injury numbers result
+
+
+#for(itera in 1:100){
+  #plot(Y_i[1:itera],  xlab = "iteration", ylab = " Fatal injuries predicted", main = "rough CI for 100 iteration")
+  #points(Y_i[itera], col ="red")
+  #Sys.sleep(0.04)
+#}
+## lope animation for the result
+
+```
