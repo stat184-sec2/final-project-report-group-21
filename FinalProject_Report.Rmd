@@ -69,6 +69,13 @@ Transportation %>%
 ```
 
 
+```{r}
+
+  Transportation %>%
+  left_join(AirPorts, by = c("Accident.Number" = "NTSB_RPRT_NBR")) 
+
+
+```
 
 
 
