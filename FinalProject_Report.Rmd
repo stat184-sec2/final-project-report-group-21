@@ -309,11 +309,14 @@ plot(DangerTree, type ="simple")
 
 
 ### Purpose of investigating this topic
+## we are investigate the fatal number and all the injury number in each eaccident among differnent conditions. such as weather, location (latitude, longitude) 
+## and try to figure out if there is relationships among them. later, we are trying to make some prediction by using our previous data.
 
 
 
 
-### Problems faced during this project 
+### Problems faced during this project
+## the data is hard to find the similar variable name among different data. also, the original data size is really large at begining. in addition, there is a lot od NA variable in the whole data set. moreover, our datasets are containing many different categorial vaiables,os it is hard to navigate the trend or the distribution of the data.
 
 
 
