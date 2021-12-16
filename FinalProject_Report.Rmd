@@ -17,6 +17,11 @@ library(mosaic)
 library(tidyverse)
 library(tidyr)
 library(dcData)
+
+library(dplyr)
+library(ggplot2)
+
+
 library(lubridate)
 library(ggplot2)
 library(dplyr)
@@ -62,6 +67,14 @@ names(AirPorts)
 
 ## Data Wrangling
 
+(+) general data wrangling using various data verbs like filter, mutate, summarise, arrange, group_by, etc.
+(+) joins for multiple data tables. 
+(+) pivot_wider & pivot_longer--or similar--to stack/unstack variables
+(+) regular expressions
+(+) reduction and/or transformation functions like mean, sum, max, min, n(), rank, pmin, etc. 
+(+) user-defined functions 
+(+) loops/control flow 
+
 ```{r}
 Transportation %>%
   filter(Injury.Severity == "Fatal") %>%
@@ -81,8 +94,82 @@ Transportation %>%
 
 
 
+
+## loop + user define function##
+```{r}
+set.seed(184)
+Latitude = Transportation$Latitude
+longitude= Transportation$Longitude
+Total.Fatal.Injuries =Transportation$Total.Fatal.Injuries
+## define the variable
+model1 <- glm(Total.Fatal.Injuries ~ Latitude+longitude)
+## define the model for forecasting the fatal injuries
+b1 <- coef(model1)[[1]]
+b2 <- coef(model1)[[2]]#Latitude
+b3 <- coef(model1)[[3]]#longitude
+## create a vector space for storing the parameter of data
+summary(model1)
+# check the parameter
+y= Total.Fatal.Injuries
+par(mfrow= c(1,2))
+hist(Latitude)
+hist(longitude)
+## check the disatribution and spread of the variable
+latimean <- mean(Latitude, na.rm = TRUE)
+logimean <- mean(longitude, na.rm = TRUE)
+latisd <- sd(Latitude, na.rm = TRUE)
+logisd <- sd(longitude, na.rm = TRUE)
+## calculate the parameter for looping
+library(data.table)
+n = 1000
+itera = 1000
+## runtime
+store1 <-rep(0,itera)
+store2 <-rep(0,itera)
+strore_y <-rep(0,itera)
+## store the data for bi (empty space)
+x<- mean(Total.Fatal.Injuries)
+for (i in 1:itera){
+  error = rnorm(n, mean = 1, sd = 1) 
+  xlatitude = rnorm(n, mean = latimean, sd = latisd)
+  xlogitude = rnorm(n, mean =logimean, sd = logisd)
+  
+  Y_i = b1 + b2*xlatitude+b3*xlogitude+error
+  
+  fun_i <-glm(Y_i~xlatitude+xlogitude)
+  
+  store1[i] <- coef(fun_i)[[2]]
+  store2[i] <-coef(fun_i)[[3]]
+  strore_y[i] <-Y_i[i]
+  
+  data_i = data.table(Y = Y_i)
+}
+## run  the model with loop
+sd1 <-sd(strore_y)
+mean1 <- mean(strore_y)
+## get the parameter
+plot(density(strore_y), main = "Density plot of Fatal injuries predicted", ylim = c(0,0.4), xlim = c(0,8))
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+hist( strore_y, prob=TRUE, main = "histogram of Fatal injuries predicted", ylim = c(0,0.4), xlim = c(0,8))
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+## check the predicted is valid enough
+alpha<-0.05
+quantile(strore_y,probs=c(alpha/2,1-alpha/2))
+## predict injury numbers result
+```
+
+
 ## Data Visualization 
 
+(*1*) relevant to stated research question for the analysis
+(*2*) are neat with professional appearance including titles, axis labels, guides, etc 
+(*3*) include at least one effective display of many--at least 3--variables (cannot use a map or decision tree for this requirement)
+(*4*) include 3 of the following 5 visualization techniques learned in STAT 184:
+(+) use of multiple geoms such as points, density, lines, boxplots, etc 
+(+) use of multiple aesthetics--not necessarily all in the same graph--such as color, size, shape, x/y position, facets, alpha, etc 
+(+) layered graphics such as points and accompanying smoother, points and accompanying boxplots, overlaid density distributions, etc 
+(+) leaflet or choropleth maps 
+(+) decision tree and/or dendogram displaying exploratory machine learning results
 
 ```{r}
 library(dplyr)
@@ -112,6 +199,31 @@ Transportation %>%
 ```
 
 
+```{r}
+Transportation %>%
+ filter(!(Investigation.Type %in% "")) %>%
+ filter(!(Aircraft.damage %in% 
+    "")) %>%
+ filter(!(Aircraft.Category %in% "")) %>%
+ filter(!(Amateur.Built %in% 
+    "")) %>%
+ filter(!(Engine.Type %in% "")) %>%
+ filter(!(FAR.Description %in% "")) %>%
+ 
+    filter(!(Schedule %in% "")) %>%
+ filter(!(Purpose.of.flight %in% "")) %>%
+ filter(!(Weather.Condition %in% 
+    "")) %>%
+ filter(!(Broad.phase.of.flight %in% "")) %>%
+ filter(!(Report.Status %in% 
+    "")) %>%
+ ggplot() +
+ aes(x = Weather.Condition, y = Total.Fatal.Injuries, colour = Aircraft.Category) +
+ geom_boxplot(fill = "#0c4c8a") +
+ scale_color_brewer(palette = "YlGnBu") +
+ theme_minimal() +
+ ylim(0L, 20L)
+```
 
 
 
