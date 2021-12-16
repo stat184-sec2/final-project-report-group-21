@@ -38,15 +38,17 @@ library(olsrr)
 
 ## Data Access
 ```{r}
-#Data intake
+#Data intake which was recieved from the ntsb national aviation data log https://www.ntsb.gov/_layouts/ntsb.aviation/index.aspx
 Transportation <- read.file("AviationData.csv") 
+
+# Secondary Data source from kaggle which included more information regarding aviation incidents with matching incident numbers
 AirPorts <- read.file("ntsb_aviation_data.csv")
 ```
 
 
 
 ```{r}
-# Main Data inspection
+# Main Data inspection of our Primary data sourcs
 summary(Transportation)
 glimpse(Transportation)
 head(Transportation)
@@ -55,7 +57,7 @@ nrow(Transportation)
 
 
 ```{r}
-# Other Data inspection
+# Data inspection of our Secondary Data Source
 glimpse(AirPorts)
 head(AirPorts)
 nrow(AirPorts)
@@ -67,32 +69,60 @@ names(AirPorts)
 
 ## Data Wrangling
 
-(+) general data wrangling using various data verbs like filter, mutate, summarise, arrange, group_by, etc.
-(+) joins for multiple data tables. 
+(+) general data wrangling using various data verbs like filter, mutate, summarise, arrange, group_by, etc. #
+(+) joins for multiple data tables. #
 (+) pivot_wider & pivot_longer--or similar--to stack/unstack variables
 (+) regular expressions
 (+) reduction and/or transformation functions like mean, sum, max, min, n(), rank, pmin, etc. 
-(+) user-defined functions 
-(+) loops/control flow 
+(+) user-defined functions #
+(+) loops/control flow #
 
 ```{r}
+##Filtering injurys thats resulted in deaths from crashes to get a better idea of how the data was in reality
+
 Transportation %>%
   filter(Injury.Severity == "Fatal") %>%
   head(20)
 ```
+
+
 ```{r}
- Joint_Transport %>%
-    mutate(AmateurORNot = ifelse(Amateur.Built == 'Yes', 1, 0))
+
+TotalDeaths <- as.numeric(Total.Fatal.Injuries)
+
+# Number of instances of fatal deaths from each accident. 8429 instances where 1 person died during an aviation accident 
+  Transportation %>%
+  group_by(Total.Fatal.Injuries) %>%
+  filter( Event.Date <= '2020-02-16' & Total.Fatal.Injuries > 0) %>%
+  summarise(total = n())
+  
+
+
+```
+
+
+
+```{r}
+TotalDeaths <- as.numeric(Total.Fatal.Injuries)
+
+#Similar as above but arranged in decending order from the total of instances with the most fatal injuries observed.
+
+  Transportation %>%
+  group_by(Total.Fatal.Injuries) %>%
+  filter( Event.Date <= '2020-02-16' & Total.Fatal.Injuries > 0) %>%
+  summarise(total = n()) %>%
+  arrange(desc(Total.Fatal.Injuries))
 ```
 
 
 ```{r}
 
-  
-  Joint_Transport <-
+#Join function used to merge our primary and secondary data source to dig deeper into our analysis.
+
+Joint_Transport <-
   Transportation %>%
   select(Investigation.Type, Accident.Number, Injury.Severity, Aircraft.damage, Number.of.Engines, Total.Fatal.Injuries, Total.Serious.Injuries) %>%
-  left_join(AirPorts %>% select(NTSB_RPRT_NBR, FLIGHT_PHASE_DESC ), by = c("Accident.Number" = "NTSB_RPRT_NBR")) %>%
+  left_join(AirPorts %>% select(NTSB_RPRT_NBR, FLIGHT_PHASE_DESC, REPORT_STATUS ), by = c("Accident.Number" = "NTSB_RPRT_NBR")) %>%
   na.omit(Joint_Transport) 
 
 
@@ -101,6 +131,17 @@ Joint_Transport
 ```
 
 
+
+```{r}
+#mutation of theAircraft.damage variable 
+
+Accident_Ranking <-
+Joint_Transport %>%
+  mutate(ranking = if_else(condition = (Aircraft.damage == "Destroyed" & Total.Fatal.Injuries > 100), true = "Level1", false ="Level2")) %>%
+  filter(Total.Fatal.Injuries > 100) %>%
+  arrange(desc(Total.Fatal.Injuries))
+Accident_Ranking
+```
 
 
 
@@ -203,6 +244,7 @@ Transportation %>%
  filter(!(Report.Status %in% 
     "")) %>%
  ggplot() +
+ ggtitle("Correlation of Engine Types in Aviation Disasters") +
  aes(x = Engine.Type, weight = Total.Fatal.Injuries) +
  geom_bar(fill = "#0c4c8a") +
  theme_minimal()
@@ -210,6 +252,8 @@ Transportation %>%
 
 
 ```{r}
+
+WeatherPlot<-
 Transportation %>%
  filter(!(Investigation.Type %in% "")) %>%
  filter(!(Aircraft.damage %in% 
@@ -228,21 +272,37 @@ Transportation %>%
  filter(!(Report.Status %in% 
     "")) %>%
  ggplot() +
+ ggtitle("Weather's Role in Aviation Disaster's Observed") +
  aes(x = Weather.Condition, y = Total.Fatal.Injuries, colour = Aircraft.Category) +
  geom_boxplot(fill = "#0c4c8a") +
  scale_color_brewer(palette = "YlGnBu") +
  theme_minimal() +
  ylim(0L, 20L)
+
+WeatherPlot
+```
+
+```{r}
+JitterPlot <-
+gf_jitter(Total.Fatal.Injuries ~ Aircraft.damage, data = Joint_Transport, color = ~ Number.of.Engines) %>%
+  gf_spline() %>%
+  gf_facet_wrap(~ Investigation.Type, ncol = 10) %>% 
+  gf_theme(legend.position = "right") %>% 
+  gf_labs(title = "Obsevered Severity of Accidents Considering Many Factors", caption = "if variables are small view in new window")
+
+JitterPlot
 ```
 
 
 
+
+
 ```{r}
-  Danger <-
-  Joint_Transport1 %>%
+  DangerTree <-
+  Joint_Transport %>%
   ctree( Aircraft.damage == "Substantial" ~ Number.of.Engines + Total.Serious.Injuries  , data = .)
 
-plot(Danger, type ="simple")
+plot(DangerTree, type ="simple")
 ```
 
 
