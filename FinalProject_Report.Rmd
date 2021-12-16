@@ -21,7 +21,7 @@ library(dcData)
 library(dplyr)
 library(ggplot2)
 
-
+library(party)
 library(lubridate)
 library(ggplot2)
 library(dplyr)
@@ -80,14 +80,24 @@ Transportation %>%
   filter(Injury.Severity == "Fatal") %>%
   head(20)
 ```
+```{r}
+ Joint_Transport %>%
+    mutate(AmateurORNot = ifelse(Amateur.Built == 'Yes', 1, 0))
+```
 
 
 ```{r}
 
+  
+  Joint_Transport <-
   Transportation %>%
-  left_join(AirPorts, by = c("Accident.Number" = "NTSB_RPRT_NBR")) 
+  select(Investigation.Type, Accident.Number, Injury.Severity, Aircraft.damage, Number.of.Engines, Total.Fatal.Injuries, Total.Serious.Injuries) %>%
+  left_join(AirPorts %>% select(NTSB_RPRT_NBR, FLIGHT_PHASE_DESC ), by = c("Accident.Number" = "NTSB_RPRT_NBR")) %>%
+  na.omit(Joint_Transport) 
 
 
+
+Joint_Transport
 ```
 
 
@@ -223,6 +233,16 @@ Transportation %>%
  scale_color_brewer(palette = "YlGnBu") +
  theme_minimal() +
  ylim(0L, 20L)
+```
+
+
+
+```{r}
+  Danger <-
+  Joint_Transport1 %>%
+  ctree( Aircraft.damage == "Substantial" ~ Number.of.Engines + Total.Serious.Injuries  , data = .)
+
+plot(Danger, type ="simple")
 ```
 
 
